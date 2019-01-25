@@ -366,13 +366,14 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     private boolean requestAudioFocus() {
-        if (disableFocus) {
-            return true;
-        }
-        int result = audioManager.requestAudioFocus(this,
-                AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN);
-        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        // if (disableFocus) {
+        //     return true;
+        // }
+        // int result = audioManager.requestAudioFocus(this,
+        //         AudioManager.STREAM_MUSIC,
+        //         AudioManager.AUDIOFOCUS_GAIN);
+        // return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        return true;
     }
 
     private void setPlayWhenReady(boolean playWhenReady) {
