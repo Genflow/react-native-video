@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
@@ -14,6 +15,7 @@ import android.view.Window;
 import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
 
+import com.brentvatne.react.BuildConfig;
 import com.brentvatne.react.R;
 import com.brentvatne.receiver.AudioBecomingNoisyReceiver;
 import com.brentvatne.receiver.BecomingNoisyListener;
@@ -109,6 +111,7 @@ class ReactExoplayerView extends FrameLayout implements
     private long resumePosition;
     private boolean loadVideoStarted;
     private boolean isFullscreen;
+    private boolean isFocused;
     private boolean isInBackground;
     private boolean isPaused;
     private boolean isBuffering;
@@ -467,6 +470,7 @@ class ReactExoplayerView extends FrameLayout implements
         switch (focusChange) {
             case AudioManager.AUDIOFOCUS_LOSS:
                 eventEmitter.audioFocusChanged(false);
+                eventEmitter.onUncontrolledFocusLost(false);
                 break;
             case AudioManager.AUDIOFOCUS_GAIN:
                 eventEmitter.audioFocusChanged(true);
@@ -1006,6 +1010,21 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setDisableFocus(boolean disableFocus) {
         this.disableFocus = disableFocus;
+    }
+
+    public void setIsFocused(boolean isFocused) {
+        if (isFocused == this.isFocused) {
+            return;
+        }
+        this.isFocused = isFocused;
+
+        if (isFocused) {
+            audioManager.requestAudioFocus(this,
+                 AudioManager.STREAM_MUSIC,
+                 AudioManager.AUDIOFOCUS_GAIN);
+        } else {
+            audioManager.abandonAudioFocus(this);
+        }
     }
 
     public void setFullscreen(boolean fullscreen) {

@@ -32,6 +32,7 @@ class VideoEventEmitter {
     private static final String EVENT_BANDWIDTH = "onVideoBandwidthUpdate";
     private static final String EVENT_SEEK = "onVideoSeek";
     private static final String EVENT_END = "onVideoEnd";
+    private static final String EVENT_UNCONTROLLED_FOCUS_LOST = "onVideoUncontrolledFocusLost";
     private static final String EVENT_FULLSCREEN_WILL_PRESENT = "onVideoFullscreenPlayerWillPresent";
     private static final String EVENT_FULLSCREEN_DID_PRESENT = "onVideoFullscreenPlayerDidPresent";
     private static final String EVENT_FULLSCREEN_WILL_DISMISS = "onVideoFullscreenPlayerWillDismiss";
@@ -54,6 +55,7 @@ class VideoEventEmitter {
             EVENT_PROGRESS,
             EVENT_SEEK,
             EVENT_END,
+            EVENT_UNCONTROLLED_FOCUS_LOST,
             EVENT_FULLSCREEN_WILL_PRESENT,
             EVENT_FULLSCREEN_DID_PRESENT,
             EVENT_FULLSCREEN_WILL_DISMISS,
@@ -78,6 +80,7 @@ class VideoEventEmitter {
             EVENT_PROGRESS,
             EVENT_SEEK,
             EVENT_END,
+            EVENT_UNCONTROLLED_FOCUS_LOST,
             EVENT_FULLSCREEN_WILL_PRESENT,
             EVENT_FULLSCREEN_DID_PRESENT,
             EVENT_FULLSCREEN_WILL_DISMISS,
@@ -117,6 +120,7 @@ class VideoEventEmitter {
     private static final String EVENT_PROP_TEXT_TRACKS = "textTracks";
     private static final String EVENT_PROP_HAS_AUDIO_FOCUS = "hasAudioFocus";
     private static final String EVENT_PROP_IS_BUFFERING = "isBuffering";
+    private static final String EVENT_PROP_IS_FOCUSED = "isFocused";
     private static final String EVENT_PROP_PLAYBACK_RATE = "playbackRate";
 
     private static final String EVENT_PROP_ERROR = "error";
@@ -205,6 +209,12 @@ class VideoEventEmitter {
 
     void end() {
         receiveEvent(EVENT_END, null);
+    }
+
+    void onUncontrolledFocusLost(boolean isFocused) {
+        WritableMap event = Arguments.createMap();
+        event.putBoolean(EVENT_PROP_IS_FOCUSED, isFocused);
+        receiveEvent(EVENT_UNCONTROLLED_FOCUS_LOST, event);
     }
 
     void fullscreenWillPresent() {
