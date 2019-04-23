@@ -1021,7 +1021,7 @@ class ReactExoplayerView extends FrameLayout implements
         if (isFocused) {
             audioManager.requestAudioFocus(this,
                  AudioManager.STREAM_MUSIC,
-                 AudioManager.AUDIOFOCUS_GAIN);
+                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         } else {
             audioManager.abandonAudioFocus(this);
         }

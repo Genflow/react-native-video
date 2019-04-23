@@ -198,9 +198,9 @@ class VideoEventEmitter {
     }
 
     void buffering(boolean isBuffering) {
-        WritableMap map = Arguments.createMap();
-        map.putBoolean(EVENT_PROP_IS_BUFFERING, isBuffering);
-        receiveEvent(EVENT_BUFFER, map);
+        WritableMap event = Arguments.createMap();
+        event.putBoolean(EVENT_PROP_IS_BUFFERING, isBuffering);
+        receiveEvent(EVENT_BUFFER, event);
     }
 
     void idle() {
