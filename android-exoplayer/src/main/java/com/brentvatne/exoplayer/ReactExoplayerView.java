@@ -111,6 +111,7 @@ class ReactExoplayerView extends FrameLayout implements
     private long resumePosition;
     private boolean loadVideoStarted;
     private boolean isFullscreen;
+    private boolean isExternalMusicDucked;
     private boolean isFocused;
     private boolean isInBackground;
     private boolean isPaused;
@@ -471,9 +472,17 @@ class ReactExoplayerView extends FrameLayout implements
             case AudioManager.AUDIOFOCUS_LOSS:
                 eventEmitter.audioFocusChanged(false);
                 eventEmitter.onUncontrolledFocusLost(false);
+                eventEmitter.onUncontrolledDuckLost(false);
                 break;
             case AudioManager.AUDIOFOCUS_GAIN:
                 eventEmitter.audioFocusChanged(true);
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                eventEmitter.audioFocusChanged(true);
+                eventEmitter.onUncontrolledDuckLost(false);
+                break;
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                eventEmitter.onUncontrolledFocusLost(false);
                 break;
             default:
                 break;
@@ -1020,8 +1029,23 @@ class ReactExoplayerView extends FrameLayout implements
 
         if (isFocused) {
             audioManager.requestAudioFocus(this,
-                 AudioManager.STREAM_MUSIC,
-                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        } else {
+            audioManager.abandonAudioFocus(this);
+        }
+    }
+
+    public void setIsExternalMusicDucked(boolean isExternalMusicDucked) {
+        if (isExternalMusicDucked == this.isExternalMusicDucked) {
+            return;
+        }
+        this.isExternalMusicDucked = isExternalMusicDucked;
+
+        if (isExternalMusicDucked) {
+            audioManager.requestAudioFocus(this,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK );
         } else {
             audioManager.abandonAudioFocus(this);
         }

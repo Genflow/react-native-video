@@ -33,6 +33,7 @@ class VideoEventEmitter {
     private static final String EVENT_SEEK = "onVideoSeek";
     private static final String EVENT_END = "onVideoEnd";
     private static final String EVENT_UNCONTROLLED_FOCUS_LOST = "onVideoUncontrolledFocusLost";
+    private static final String EVENT_UNCONTROLLED_DUCK_LOST = "onVideoUncontrolledDuckLost";
     private static final String EVENT_FULLSCREEN_WILL_PRESENT = "onVideoFullscreenPlayerWillPresent";
     private static final String EVENT_FULLSCREEN_DID_PRESENT = "onVideoFullscreenPlayerDidPresent";
     private static final String EVENT_FULLSCREEN_WILL_DISMISS = "onVideoFullscreenPlayerWillDismiss";
@@ -56,6 +57,7 @@ class VideoEventEmitter {
             EVENT_SEEK,
             EVENT_END,
             EVENT_UNCONTROLLED_FOCUS_LOST,
+            EVENT_UNCONTROLLED_DUCK_LOST,
             EVENT_FULLSCREEN_WILL_PRESENT,
             EVENT_FULLSCREEN_DID_PRESENT,
             EVENT_FULLSCREEN_WILL_DISMISS,
@@ -81,6 +83,7 @@ class VideoEventEmitter {
             EVENT_SEEK,
             EVENT_END,
             EVENT_UNCONTROLLED_FOCUS_LOST,
+            EVENT_UNCONTROLLED_DUCK_LOST,
             EVENT_FULLSCREEN_WILL_PRESENT,
             EVENT_FULLSCREEN_DID_PRESENT,
             EVENT_FULLSCREEN_WILL_DISMISS,
@@ -121,6 +124,8 @@ class VideoEventEmitter {
     private static final String EVENT_PROP_HAS_AUDIO_FOCUS = "hasAudioFocus";
     private static final String EVENT_PROP_IS_BUFFERING = "isBuffering";
     private static final String EVENT_PROP_IS_FOCUSED = "isFocused";
+    private static final String EVENT_PROP_IS_EXTERNAL_MUSIC_DUCKED = "isExternalMusicDucked";
+
     private static final String EVENT_PROP_PLAYBACK_RATE = "playbackRate";
 
     private static final String EVENT_PROP_ERROR = "error";
@@ -215,6 +220,12 @@ class VideoEventEmitter {
         WritableMap event = Arguments.createMap();
         event.putBoolean(EVENT_PROP_IS_FOCUSED, isFocused);
         receiveEvent(EVENT_UNCONTROLLED_FOCUS_LOST, event);
+    }
+
+    void onUncontrolledDuckLost(boolean isExternalMusicDucked) {
+        WritableMap event = Arguments.createMap();
+        event.putBoolean(EVENT_PROP_IS_EXTERNAL_MUSIC_DUCKED, isExternalMusicDucked);
+        receiveEvent(EVENT_UNCONTROLLED_DUCK_LOST, event);
     }
 
     void fullscreenWillPresent() {

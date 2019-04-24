@@ -52,6 +52,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     private static final String PROP_PLAY_IN_BACKGROUND = "playInBackground";
     private static final String PROP_DISABLE_FOCUS = "disableFocus";
     private static final String PROP_IS_FOCUSED = "isFocused";
+    private static final String PROP_IS_EXTERNAL_MUSIC_DUCKED = "isExternalMusicDucked";
     private static final String PROP_FULLSCREEN = "fullscreen";
     private static final String PROP_USE_TEXTURE_VIEW = "useTextureView";
     private static final String PROP_SELECTED_VIDEO_TRACK = "selectedVideoTrack";
@@ -240,10 +241,15 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
     public void setDisableFocus(final ReactExoplayerView videoView, final boolean disableFocus) {
         videoView.setDisableFocus(disableFocus);
     }
-    
+
     @ReactProp(name = PROP_IS_FOCUSED, defaultBoolean = false)
     public void setIsFocused(final ReactExoplayerView videoView, final boolean isFocused) {
         videoView.setIsFocused(isFocused);
+    }
+
+    @ReactProp(name = PROP_IS_EXTERNAL_MUSIC_DUCKED, defaultBoolean = false)
+    public void setIsExternalMusicDucked(final ReactExoplayerView videoView, final boolean isExternalMusicDucked) {
+        videoView.setIsExternalMusicDucked(isExternalMusicDucked);
     }
 
     @ReactProp(name = PROP_FULLSCREEN, defaultBoolean = false)
