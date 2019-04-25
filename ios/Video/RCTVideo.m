@@ -53,8 +53,10 @@ static int const RCTVideoUnset = -1;
   float _volume;
   float _rate;
   float _maxBitRate;
-
+  
+  BOOL _shouldChangeSessions;
   BOOL _isFocused;
+  BOOL _isExternalMusicDucked;
   BOOL _muted;
   BOOL _paused;
   BOOL _repeat;
@@ -84,6 +86,7 @@ static int const RCTVideoUnset = -1;
   if ((self = [super init])) {
     _eventDispatcher = eventDispatcher;
     
+    _shouldChangeSessions = NO;
     _playbackRateObserverRegistered = NO;
     _isExternalPlaybackActiveObserverRegistered = NO;
     _playbackStalled = NO;
@@ -877,9 +880,57 @@ static int const RCTVideoUnset = -1;
 
 - (void)setIsFocused:(BOOL)isFocused
 {
-    if (_isFocused != isFocused) {
-        _isFocused = isFocused;
-        [self applyModifiers];
+//    if (_isFocused != isFocused) {
+//        _isFocused = isFocused;
+//
+//        if (_isExternalMusicDucked) {
+//            _isExternalMusicDucked = NO;
+//
+//            if(self.onVideoUncontrolledDuckLost) {
+//                self.onVideoUncontrolledDuckLost(@{@"isExternalMusicDucked": @(NO), @"target": self.reactTag});
+//            }
+//        }
+//
+//        [self applyModifiers];
+//    }
+}
+
+- (void)setIsExternalMusicDucked:(BOOL)isExternalMusicDucked
+{
+    if (_isExternalMusicDucked != isExternalMusicDucked) {
+        _isExternalMusicDucked = isExternalMusicDucked;
+        
+        [self duckTheExternalMusic];
+    }
+}
+
+- (void)duckTheExternalMusic
+{
+    AVAudioSession *session = [AVAudioSession sharedInstance];
+    
+    if (session.otherAudioPlaying) {
+        if (_isExternalMusicDucked) {
+            [_player pause];
+            [_player setRate:0.0];
+            [session setActive:NO withOptions: 0 error:nil];
+            [session setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionDuckOthers error:nil];
+            [session setActive:YES withOptions: 0 error:nil];
+            [_player play];
+            [_player setRate:_rate];
+            
+        } else {
+            [_player pause];
+            [_player setRate:0.0];
+            [session setActive:NO withOptions: 0 error:nil];
+            [session setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionMixWithOthers error:nil];
+            [session setActive:YES withOptions: 0 error:nil];
+            [_player play];
+            [_player setRate:_rate];
+        }
+    } else {
+        if (self.onVideoUncontrolledDuckLost && _isExternalMusicDucked) {
+            self.onVideoUncontrolledDuckLost(@{@"isExternalMusicDucked": @(NO), @"target": self.reactTag});
+        }
     }
 }
 
@@ -903,22 +954,6 @@ static int const RCTVideoUnset = -1;
   } else {
     [_player setVolume:_volume];
     [_player setMuted:NO];
-  }
-    
-  if (_isFocused) {
-//    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategorySoloAmbient error:nil];
-      
-          [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
-      
-          [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient withOptions:AVAudioSessionCategoryOptionDuckOthers error:nil];
-      
-          [[AVAudioSession sharedInstance] setActive:YES withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
-  } else {
-          [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
-      
-          [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient withOptions:AVAudioSessionCategoryOptionMixWithOthers error:nil];
-      
-          [[AVAudioSession sharedInstance] setActive:YES withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
   }
   
   [self setMaxBitRate:_maxBitRate];
