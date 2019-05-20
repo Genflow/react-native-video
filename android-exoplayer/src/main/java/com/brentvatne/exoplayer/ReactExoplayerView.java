@@ -111,8 +111,7 @@ class ReactExoplayerView extends FrameLayout implements
     private long resumePosition;
     private boolean loadVideoStarted;
     private boolean isFullscreen;
-    private boolean isExternalMusicDucked;
-    private boolean isFocused;
+    private int audioFocusState;
     private boolean isInBackground;
     private boolean isPaused;
     private boolean isBuffering;
@@ -471,18 +470,12 @@ class ReactExoplayerView extends FrameLayout implements
         switch (focusChange) {
             case AudioManager.AUDIOFOCUS_LOSS:
                 eventEmitter.audioFocusChanged(false);
-                eventEmitter.onUncontrolledFocusLost(false);
-                eventEmitter.onUncontrolledDuckLost(false);
                 break;
             case AudioManager.AUDIOFOCUS_GAIN:
                 eventEmitter.audioFocusChanged(true);
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 eventEmitter.audioFocusChanged(true);
-                eventEmitter.onUncontrolledDuckLost(false);
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                eventEmitter.onUncontrolledFocusLost(false);
                 break;
             default:
                 break;
@@ -1021,33 +1014,27 @@ class ReactExoplayerView extends FrameLayout implements
         this.disableFocus = disableFocus;
     }
 
-    public void setIsFocused(boolean isFocused) {
-        if (isFocused == this.isFocused) {
+    public void setAudioFocusState(int audioFocusState) {
+        if (audioFocusState == this.audioFocusState) {
             return;
         }
-        this.isFocused = isFocused;
+        this.audioFocusState = audioFocusState;
 
-        if (isFocused) {
-            audioManager.requestAudioFocus(this,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-        } else {
-            audioManager.abandonAudioFocus(this);
-        }
-    }
+        switch (audioFocusState) {
+            case 1:
+                audioManager.requestAudioFocus(this,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK );
+                break;
 
-    public void setIsExternalMusicDucked(boolean isExternalMusicDucked) {
-        if (isExternalMusicDucked == this.isExternalMusicDucked) {
-            return;
-        }
-        this.isExternalMusicDucked = isExternalMusicDucked;
+            case 2:
+                audioManager.requestAudioFocus(this,
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                break;
 
-        if (isExternalMusicDucked) {
-            audioManager.requestAudioFocus(this,
-                    AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK );
-        } else {
-            audioManager.abandonAudioFocus(this);
+            default:
+                audioManager.abandonAudioFocus(this);
         }
     }
 
