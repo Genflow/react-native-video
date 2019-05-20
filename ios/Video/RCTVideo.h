@@ -27,8 +27,6 @@
 @property (nonatomic, copy) RCTBubblingEventBlock onBandwidthUpdate;
 @property (nonatomic, copy) RCTBubblingEventBlock onVideoSeek;
 @property (nonatomic, copy) RCTBubblingEventBlock onVideoEnd;
-@property (nonatomic, copy) RCTBubblingEventBlock onVideoUncontrolledFocusLost;
-@property (nonatomic, copy) RCTBubblingEventBlock onVideoUncontrolledDuckLost;
 @property (nonatomic, copy) RCTBubblingEventBlock onTimedMetadata;
 @property (nonatomic, copy) RCTBubblingEventBlock onVideoAudioBecomingNoisy;
 @property (nonatomic, copy) RCTBubblingEventBlock onVideoFullscreenPlayerWillPresent;
