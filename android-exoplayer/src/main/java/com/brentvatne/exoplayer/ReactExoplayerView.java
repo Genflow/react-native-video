@@ -3,10 +3,12 @@ package com.brentvatne.exoplayer;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
@@ -14,6 +16,9 @@ import android.view.View;
 import android.view.Window;
 import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
+import android.media.AudioFocusRequest;
+
+import com.google.android.exoplayer2.audio.AudioFocusManager;
 
 import com.brentvatne.react.BuildConfig;
 import com.brentvatne.react.R;
@@ -76,6 +81,9 @@ import java.lang.Object;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import static android.os.Build.VERSION_CODES.LOLLIPOP;
+import static android.os.Build.VERSION_CODES.O;
+
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
         LifecycleEventListener,
@@ -98,7 +106,7 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     private final VideoEventEmitter eventEmitter;
-    
+
     private Handler mainHandler;
     private ExoPlayerView exoPlayerView;
 
@@ -132,7 +140,7 @@ class ReactExoplayerView extends FrameLayout implements
     private String audioTrackType;
     private Dynamic audioTrackValue;
     private String videoTrackType;
-    private Dynamic videoTrackValue;    
+    private Dynamic videoTrackValue;
     private ReadableArray audioTracks;
     private String textTrackType;
     private Dynamic textTrackValue;
@@ -148,6 +156,18 @@ class ReactExoplayerView extends FrameLayout implements
     private final ThemedReactContext themedReactContext;
     private final AudioManager audioManager;
     private final AudioBecomingNoisyReceiver audioBecomingNoisyReceiver;
+
+    private AudioAttributes mPlaybackAttributes;
+    private AudioFocusRequest mFocusGainRequest;
+    private AudioFocusRequest mFocusDuckRequest;
+
+    private AudioManager.OnAudioFocusChangeListener focusListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+
+        }
+    };
+
 
     private final Handler progressHandler = new Handler() {
         @Override
@@ -176,7 +196,7 @@ class ReactExoplayerView extends FrameLayout implements
         this.eventEmitter = new VideoEventEmitter(context);
 
         createViews();
-        
+
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         themedReactContext.addLifecycleEventListener(this);
         audioBecomingNoisyReceiver = new AudioBecomingNoisyReceiver(themedReactContext);
@@ -194,7 +214,7 @@ class ReactExoplayerView extends FrameLayout implements
     private void createViews() {
         clearResumePosition();
         mediaDataSourceFactory = buildDataSourceFactory(true);
-        mainHandler = new Handler();
+        mainHandler = new Handler(Looper.getMainLooper());
         if (CookieHandler.getDefault() != DEFAULT_COOKIE_MANAGER) {
             CookieHandler.setDefault(DEFAULT_COOKIE_MANAGER);
         }
@@ -265,7 +285,7 @@ class ReactExoplayerView extends FrameLayout implements
             TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
             trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
             trackSelector.setParameters(trackSelector.buildUponParameters()
-                            .setMaxVideoBitrate(maxBitRate == 0 ? Integer.MAX_VALUE : maxBitRate));
+                    .setMaxVideoBitrate(maxBitRate == 0 ? Integer.MAX_VALUE : maxBitRate));
 
             DefaultAllocator allocator = new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE);
             DefaultLoadControl defaultLoadControl = new DefaultLoadControl(allocator, minBufferMs, maxBufferMs, bufferForPlaybackMs, bufferForPlaybackAfterRebufferMs, -1, true);
@@ -305,6 +325,15 @@ class ReactExoplayerView extends FrameLayout implements
             eventEmitter.loadStart();
             loadVideoStarted = true;
         }
+
+        if (Build.VERSION.SDK_INT >= O) {
+            mPlaybackAttributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+                    .build();
+        }
+
+
     }
 
     private MediaSource buildMediaSource(Uri uri, String overrideExtension) {
@@ -368,30 +397,12 @@ class ReactExoplayerView extends FrameLayout implements
         BANDWIDTH_METER.removeEventListener(this);
     }
 
-    private boolean requestAudioFocus() {
-        // if (disableFocus) {
-        //     return true;
-        // }
-        // int result = audioManager.requestAudioFocus(this,
-        //         AudioManager.STREAM_MUSIC,
-        //         AudioManager.AUDIOFOCUS_GAIN);
-        // return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
-        return true;
-    }
-
     private void setPlayWhenReady(boolean playWhenReady) {
         if (player == null) {
             return;
         }
 
-        if (playWhenReady) {
-            boolean hasAudioFocus = requestAudioFocus();
-            if (hasAudioFocus) {
-                player.setPlayWhenReady(true);
-            }
-        } else {
-            player.setPlayWhenReady(false);
-        }
+        player.setPlayWhenReady(playWhenReady);
     }
 
     private void startPlayback() {
@@ -470,25 +481,36 @@ class ReactExoplayerView extends FrameLayout implements
         switch (focusChange) {
             case AudioManager.AUDIOFOCUS_LOSS:
                 eventEmitter.audioFocusChanged(false);
+                System.out.println("AUDIOFOCUS_LOSS");
                 break;
-            /*case AudioManager.AUDIOFOCUS_GAIN:
-                eventEmitter.audioFocusChanged(true);
-                break;
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                eventEmitter.audioFocusChanged(true);
-                break;*/
-            default:
-                break;
-        }
 
-        if (player != null) {
-            if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-                // Lower the volume
-                player.setVolume(audioVolume * 0.8f);
-            } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-                // Raise it back to normal
-                player.setVolume(audioVolume * 1);
-            }
+            case AudioManager.AUDIOFOCUS_GAIN:
+                System.out.println("AUDIOFOCUS_GAIN");
+                break;
+
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+                System.out.println("AUDIOFOCUS_GAIN_TRANSIENT");
+                break;
+
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+                System.out.println("AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK");
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                System.out.println("AUDIOFOCUS_LOSS_TRANSIENT");
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                System.out.println("AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                break;
+
+            case AudioManager.AUDIOFOCUS_NONE:
+                System.out.println("AUDIOFOCUS_NONE");
+                break;
+
+            default:
+                System.out.println("DEFAULT MOTHERFUCKER!");
+                break;
         }
     }
 
@@ -573,11 +595,12 @@ class ReactExoplayerView extends FrameLayout implements
             audioTrack.putString("type", format.sampleMimeType);
             audioTrack.putString("language", format.language != null ? format.language : "");
             audioTrack.putString("bitrate", format.bitrate == Format.NO_VALUE ? ""
-                                    : String.format(Locale.US, "%.2fMbps", format.bitrate / 1000000f));
+                    : String.format(Locale.US, "%.2fMbps", format.bitrate / 1000000f));
             audioTracks.pushMap(audioTrack);
         }
         return audioTracks;
     }
+
     private WritableArray getVideoTrackInfo() {
         WritableArray videoTracks = Arguments.createArray();
 
@@ -595,7 +618,7 @@ class ReactExoplayerView extends FrameLayout implements
                 Format format = group.getFormat(trackIndex);
                 WritableMap videoTrack = Arguments.createMap();
                 videoTrack.putInt("width", format.width == Format.NO_VALUE ? 0 : format.width);
-                videoTrack.putInt("height",format.height == Format.NO_VALUE ? 0 : format.height);
+                videoTrack.putInt("height", format.height == Format.NO_VALUE ? 0 : format.height);
                 videoTrack.putInt("bitrate", format.bitrate == Format.NO_VALUE ? 0 : format.bitrate);
                 videoTrack.putString("codecs", format.codecs != null ? format.codecs : "");
                 videoTrack.putString("trackId",
@@ -617,13 +640,13 @@ class ReactExoplayerView extends FrameLayout implements
 
         TrackGroupArray groups = info.getTrackGroups(index);
         for (int i = 0; i < groups.length; ++i) {
-             Format format = groups.get(i).getFormat(0);
-             WritableMap textTrack = Arguments.createMap();
-             textTrack.putInt("index", i);
-             textTrack.putString("title", format.id != null ? format.id : "");
-             textTrack.putString("type", format.sampleMimeType);
-             textTrack.putString("language", format.language != null ? format.language : "");
-             textTracks.pushMap(textTrack);
+            Format format = groups.get(i).getFormat(0);
+            WritableMap textTrack = Arguments.createMap();
+            textTrack.putInt("index", i);
+            textTrack.putString("title", format.id != null ? format.id : "");
+            textTrack.putString("type", format.sampleMimeType);
+            textTrack.putString("language", format.language != null ? format.language : "");
+            textTracks.pushMap(textTrack);
         }
         return textTracks;
     }
@@ -713,8 +736,7 @@ class ReactExoplayerView extends FrameLayout implements
                             decoderInitializationException.decoderName);
                 }
             }
-        }
-        else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
+        } else if (e.type == ExoPlaybackException.TYPE_SOURCE) {
             ex = e.getSourceException();
             errorString = getResources().getString(R.string.unrecognized_media_format);
         }
@@ -783,7 +805,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setReportBandwidth(boolean reportBandwidth) {
         mReportBandwidth = reportBandwidth;
-    }   
+    }
 
     public void setRawSrc(final Uri uri, final String extension) {
         if (uri != null) {
@@ -837,7 +859,7 @@ class ReactExoplayerView extends FrameLayout implements
 
         TrackGroupArray groups = info.getTrackGroups(rendererIndex);
         int groupIndex = C.INDEX_UNSET;
-        int[] tracks = {0} ;
+        int[] tracks = {0};
 
         if (TextUtils.isEmpty(type)) {
             type = "default";
@@ -887,7 +909,7 @@ class ReactExoplayerView extends FrameLayout implements
         } else if (rendererIndex == C.TRACK_TYPE_TEXT && Util.SDK_INT > 18) { // Text default
             // Use system settings if possible
             CaptioningManager captioningManager
-                    = (CaptioningManager)themedReactContext.getSystemService(Context.CAPTIONING_SERVICE);
+                    = (CaptioningManager) themedReactContext.getSystemService(Context.CAPTIONING_SERVICE);
             if (captioningManager != null && captioningManager.isEnabled()) {
                 groupIndex = getGroupIndexForDefaultLocale(groups);
             }
@@ -919,7 +941,7 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     private int getGroupIndexForDefaultLocale(TrackGroupArray groups) {
-        if (groups.length == 0){
+        if (groups.length == 0) {
             return C.INDEX_UNSET;
         }
 
@@ -989,12 +1011,12 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     public void setRateModifier(float newRate) {
-      rate = newRate;
+        rate = newRate;
 
-      if (player != null) {
-          PlaybackParameters params = new PlaybackParameters(rate, 1f);
-          player.setPlaybackParameters(params);
-      }
+        if (player != null) {
+            PlaybackParameters params = new PlaybackParameters(rate, 1f);
+            player.setPlaybackParameters(params);
+        }
     }
 
     public void setMaxBitRateModifier(int newMaxBitRate) {
@@ -1020,21 +1042,57 @@ class ReactExoplayerView extends FrameLayout implements
         }
         this.audioFocusState = audioFocusState;
 
-        switch (audioFocusState) {
-            case 1:
-                audioManager.requestAudioFocus(this,
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK );
-                break;
+        int result = 0;
 
-            case 2:
-                audioManager.requestAudioFocus(this,
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                break;
+        if (Build.VERSION.SDK_INT >= O) {
+            switch (audioFocusState) {
+                case 0:
+                    if (mFocusGainRequest != null) {
+                        audioManager.abandonAudioFocusRequest(mFocusGainRequest);
+                    }
+                    break;
 
-            default:
-                audioManager.abandonAudioFocus(this);
+                case 1:
+                    mFocusDuckRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).build();
+                    audioManager.requestAudioFocus(mFocusDuckRequest);
+                    break;
+                case 2:
+                    mFocusGainRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT).build();
+
+                    audioManager.requestAudioFocus(mFocusGainRequest);
+                    break;
+
+                default:
+                    break;
+            }
+        } else {
+            switch (audioFocusState) {
+                case 0:
+                    if (focusListener != null) {
+                        audioManager.abandonAudioFocus(focusListener);
+                    }
+                    break;
+                case 1:
+
+
+                    audioManager.requestAudioFocus(focusListener,
+                            AudioManager.USE_DEFAULT_STREAM_TYPE,
+                            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                    break;
+
+                case 2:
+                    if (focusListener != null) {
+                        audioManager.abandonAudioFocus(focusListener);
+                        audioManager.requestAudioFocus(focusListener,
+                                AudioManager.USE_DEFAULT_STREAM_TYPE,
+                                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+
         }
     }
 
