@@ -1040,22 +1040,35 @@ class ReactExoplayerView extends FrameLayout implements
         if (audioFocusState == this.audioFocusState) {
             return;
         }
-        this.audioFocusState = audioFocusState;
 
         int result = 0;
 
         if (Build.VERSION.SDK_INT >= O) {
             switch (audioFocusState) {
                 case 0:
-                    if (mFocusGainRequest != null) {
-                        audioManager.abandonAudioFocusRequest(mFocusGainRequest);
+                    switch (this.audioFocusState) {
+                        case 1:
+                            if (mFocusDuckRequest != null) audioManager.abandonAudioFocusRequest(mFocusDuckRequest);
+                            break;
+
+                        case 2:
+                            if (mFocusGainRequest != null) audioManager.abandonAudioFocusRequest(mFocusGainRequest);
+                            break;
+
+                        default:
+                            break;
                     }
                     break;
 
                 case 1:
+                    if (this.audioFocusState == 2 && mFocusGainRequest != null) {
+                        if (mFocusGainRequest != null) audioManager.abandonAudioFocusRequest(mFocusGainRequest);
+                    }
+
                     mFocusDuckRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).build();
                     audioManager.requestAudioFocus(mFocusDuckRequest);
                     break;
+
                 case 2:
                     mFocusGainRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT).build();
 
@@ -1092,8 +1105,9 @@ class ReactExoplayerView extends FrameLayout implements
                 default:
                     break;
             }
-
         }
+
+        this.audioFocusState = audioFocusState;
     }
 
     public void setFullscreen(boolean fullscreen) {
