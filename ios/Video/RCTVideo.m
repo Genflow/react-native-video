@@ -201,6 +201,7 @@ static int const RCTVideoUnset = -1;
   [self removePlayerLayer];
   [self removePlayerItemObservers];
   [_player removeObserver:self forKeyPath:playbackRate context:nil];
+    
 }
 
 #pragma mark - App lifecycle handlers
@@ -892,13 +893,19 @@ static int const RCTVideoUnset = -1;
 - (void)changeAudioSessionCategoryOption
 {
     AVAudioSession * session = [AVAudioSession sharedInstance];
+    if (!_paused) {
+        [_player pause];
+        [_player setRate:0.0];
+    }
     
-    [_player pause];
-    [_player setRate:0.0];
     switch (_audioFocusState)
     {
+        case 0:
+            [session setActive:NO withOptions: AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
+            [session setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionMixWithOthers error:nil];
+            break;
         case 1:
-            [session setActive:NO withOptions: 0 error:nil];
+            [session setActive:NO withOptions: AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
             [session setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionDuckOthers error:nil];
             break;
             
@@ -908,13 +915,14 @@ static int const RCTVideoUnset = -1;
             break;
         
         default:
-            [session setActive:NO withOptions: AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
-            [session setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionMixWithOthers error:nil];
             break;
     }
     [session setActive:YES withOptions: 0 error:nil];
-    [_player play];
-    [_player setRate:_rate];
+    
+    if (!_paused) {
+        [_player play];
+        [_player setRate:_rate];
+    }
 }
 
 - (void)setVolume:(float)volume
@@ -1318,6 +1326,8 @@ static int const RCTVideoUnset = -1;
     _playerLayerObserverSet = NO;
   }
   _playerLayer = nil;
+
+  [[AVAudioSession sharedInstance] setActive:NO error:nil];
 }
 
 #pragma mark - RCTVideoPlayerViewControllerDelegate
