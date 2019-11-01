@@ -53,14 +53,10 @@ static int const RCTVideoUnset = -1;
   float _volume;
   float _rate;
   float _maxBitRate;
-<<<<<<< HEAD
-  
   BOOL _shouldChangeSessions;
   int _audioFocusState;
-=======
 
   BOOL _automaticallyWaitsToMinimizeStalling;
->>>>>>> b97663e09243836fd565e3def149b0bb94dfb82a
   BOOL _muted;
   BOOL _paused;
   BOOL _repeat;
@@ -94,12 +90,8 @@ static int const RCTVideoUnset = -1;
 {
   if ((self = [super init])) {
     _eventDispatcher = eventDispatcher;
-<<<<<<< HEAD
-    
     _shouldChangeSessions = NO;
-=======
 	  _automaticallyWaitsToMinimizeStalling = YES;
->>>>>>> b97663e09243836fd565e3def149b0bb94dfb82a
     _playbackRateObserverRegistered = NO;
     _isExternalPlaybackActiveObserverRegistered = NO;
     _playbackStalled = NO;
@@ -218,11 +210,7 @@ static int const RCTVideoUnset = -1;
   [self removePlayerLayer];
   [self removePlayerItemObservers];
   [_player removeObserver:self forKeyPath:playbackRate context:nil];
-<<<<<<< HEAD
-    
-=======
   [_player removeObserver:self forKeyPath:externalPlaybackActive context: nil];
->>>>>>> b97663e09243836fd565e3def149b0bb94dfb82a
 }
 
 #pragma mark - App lifecycle handlers
@@ -879,28 +867,17 @@ static int const RCTVideoUnset = -1;
     [_player pause];
     [_player setRate:0.0];
   } else {
-<<<<<<< HEAD
 //    if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
 //      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
 //    } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
 //      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
 //    }
-    [_player play];
-=======
-    if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
-    } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
-    }
-    
     if (@available(iOS 10.0, *) && !_automaticallyWaitsToMinimizeStalling) {
       [_player playImmediatelyAtRate:_rate];
     } else {
       [_player play];
       [_player setRate:_rate];
     }
->>>>>>> b97663e09243836fd565e3def149b0bb94dfb82a
-    [_player setRate:_rate];
   }
   
   _paused = paused;
