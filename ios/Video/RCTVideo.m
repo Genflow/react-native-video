@@ -867,11 +867,11 @@ static int const RCTVideoUnset = -1;
     [_player pause];
     [_player setRate:0.0];
   } else {
-//    if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
-//      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
-//    } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
-//      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
-//    }
+   if([_ignoreSilentSwitch isEqualToString:@"ignore"]) {
+     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+   } else if([_ignoreSilentSwitch isEqualToString:@"obey"]) {
+     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+   }
     if (@available(iOS 10.0, *) && !_automaticallyWaitsToMinimizeStalling) {
       [_player playImmediatelyAtRate:_rate];
     } else {
