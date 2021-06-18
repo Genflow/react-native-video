@@ -1,5 +1,5 @@
 {
-    "name": "react-native-video",
+    "name": "@genflow/react-native-video",
     "version": "5.1.0-alpha1",
     "description": "A <Video /> element for react-native",
     "main": "Video.js",
@@ -23,9 +23,13 @@
             "email": "me@hamptonmaxwell.com"
         }
     ],
-    "repository": {
-        "type": "git",
-        "url": "git@github.com:react-native-community/react-native-video.git"
+    "repository": "git@github.com:Genflow/react-native-video.git",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    },
+    "scripts": {
+        "lint": "eslint .",
+        "release": "np --no-publish --no-yarn && npm publish"
     },
     "devDependencies": {
         "babel-eslint": "5.0.0-beta8",
@@ -41,9 +45,6 @@
         "keymirror": "^0.1.1",
         "prop-types": "^15.5.10",
         "shaka-player": "^2.4.4"
-    },
-    "scripts": {
-        "test": "node_modules/.bin/eslint *.js"
     },
     "files": [
         "android-exoplayer",
